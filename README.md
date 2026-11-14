@@ -1,7 +1,7 @@
 # Sealed Log — 231-gate Tamper-Evident Storage on NEAR
 
 Built at NEAR HACKATHON 2026. Tracks: **open** (primary), **privacy** (secondary).
-Repo: public. Testnet demo: `redsigma.testnet`.
+Repo: public. Testnet demo: `sealed-log-2026.testnet`.
 
 ## The problem
 
@@ -9,7 +9,7 @@ AI agents act on users' behalf — they spend, bid, infer, vote. Every action ne
 
 ## What we built
 
-A NEAR smart contract (`redsigma.testnet`) that stores **231-gate sealed entries**:
+A NEAR smart contract (`sealed-log-2026.testnet`) that stores **231-gate sealed entries**:
 
 - **SUM** = Σ gᵢ mod 231
 - **LINEAR** = (g₁×22 + g₂) mod 231
@@ -74,7 +74,7 @@ See: up to 10 entries starting from ID 1, with `next_from` cursor for the next p
 
 ### 7. Frontend demo (read-only, no wallet)
 
-Open `frontend/index.html` from a local HTTP server (for example, `python -m http.server 8000` from the repository root, then visit `http://localhost:8000/frontend/`). Click **Fetch live status**, **Retrieve & verify locally**, then **Test modified data**. This reads `redsigma.testnet` through public testnet RPC and compares the recorded checksums in the browser; no wallet is required. The interface does not submit new entries.
+Open `frontend/index.html` from a local HTTP server (for example, `python -m http.server 8000` from the repository root, then visit `http://localhost:8000/frontend/`). Click **Fetch live status**, **Retrieve & verify locally**, then **Test modified data**. This reads `sealed-log-2026.testnet` through public testnet RPC and compares the recorded checksums in the browser; no wallet is required. The interface does not submit new entries.
 
 ## Verification (independent)
 
@@ -128,21 +128,21 @@ Secondary: `privacy` — private expense auditor; each TEE-attested inference + 
 
 ## Contract address
 
-Testnet: [`redsigma.testnet`](https://testnet.nearblocks.io/address/redsigma.testnet) (deployed live). Entry #1 is publicly readable, stored by `redsigma.testnet` for `thesis-engine`, with recorded SUM=11, LINEAR=141, PROD=168.
+Testnet: [`sealed-log-2026.testnet`](https://testnet.nearblocks.io/address/sealed-log-2026.testnet) (deployed live). The Sealed Log contract is distinct from `redsigma.testnet` (which was mistakenly queried in an earlier demo).
 
 ### Current demo status
 
-- Read-only `get_owner`, `entry_count`, and `get_entry(1)` were observed working on testnet.
-- A full-payload `verify_entry(1, action_data)` request via the explorer returned `Request too large`. The browser demo instead recomputes the exact contract checksum formula locally from the retrieved data and reports PASS/FAIL. This local result is not an on-chain `verify_entry` execution.
-- Existing entry #1 contains demo-mode thesis data, not live analytics.
+- The live Sealed Log account is `sealed-log-2026.testnet`; verify its owner and entry count using the commands below. An earlier test mistakenly queried a different contract.
+- The earlier explorer `Request too large` result concerned `redsigma.testnet`, not this contract. The browser demo recomputes the exact contract checksum formula locally from the retrieved data and reports PASS/FAIL. This local result is not an on-chain `verify_entry` execution.
+- Existing Sealed Log entries should be verified against their own returned payloads; do not assume entry #1 exists.
 - The checksums are **not collision resistant** and do not provide cryptographic authentication. They detect many edits, but deliberately constructed collisions are possible.
 - The contract supports storage and retrieval. Inheritance workflows, Chain Signatures, guardian voting, and TEE attestation are proposed integrations, **not implemented features**.
 
 ### Windows CMD read-only commands
 
 ```cmd
-near contract call-function as-read-only redsigma.testnet get_owner json-args "{}" network-config testnet now
-near contract call-function as-read-only redsigma.testnet entry_count json-args "{}" network-config testnet now
-near contract call-function as-read-only redsigma.testnet get_entry json-args "{\"entry_id\":1}" network-config testnet now
+near contract call-function as-read-only sealed-log-2026.testnet get_owner json-args "{}" network-config testnet now
+near contract call-function as-read-only sealed-log-2026.testnet entry_count json-args "{}" network-config testnet now
+near contract call-function as-read-only sealed-log-2026.testnet get_entry json-args "{\"entry_id\":5}" network-config testnet now
 ```
 

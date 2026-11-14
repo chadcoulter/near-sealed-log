@@ -1,9 +1,9 @@
 name: Build NEAR testnet contract
 on:
   push:
-    branches: [hackathon-redsigma-testnet]
+    branches: [main, fix-near-contract-build, hackathon-live-demo]
   pull_request:
-    branches: [main]
+    branches: [main, fix-near-contract-build]
   workflow_dispatch:
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
       - name: Install native build dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev pkg-config
       - name: Install cargo-near
-        run: cargo install cargo-near --locked
+        run: cargo install cargo-near --version 0.23.0 --locked
       - name: Build WASM
         run: cargo near build non-reproducible-wasm
       - name: Upload contract WASM

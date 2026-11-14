@@ -87,7 +87,7 @@
 </div>
 
 <script>
-const CONTRACT = 'redsigma.testnet'; // deployment target on NEAR testnet
+const CONTRACT = 'sealed-log-2026.testnet'; // deployed on NEAR testnet
 let networkId = 'testnet';
 
 async function nearCall(method, args) {
@@ -119,24 +119,44 @@ function renderEntries(entries) {
     container.innerHTML = '<p style="color:#94a3b8">No entries yet. Seal one above.</p>';
     return;
   }
-  container.innerHTML = entries.map(e => {
-    const ok = !e.tampered;
-    return `
-      <div class="entry">
-        <div class="meta">
-          <span class="id">#${e.entry_id}</span>
-          <span class="status ${ok ? 'ok' : 'bad'}">${ok ? 'INTACT' : 'TAMPERED'}</span>
-        </div>
-        <div><strong>Agent:</strong> ${e.agent_id}</div>
-        <p>${e.action_data}</p>
-        <div class="checksums">
-          <div class="checksum"><div class="lbl">SUM</div><div class="val">${e.checksums.sum}</div></div>
-          <div class="checksum"><div class="lbl">LINEAR</div><div class="val">${e.checksums.linear}</div></div>
-          <div class="checksum"><div class="lbl">PROD</div><div class="val">${e.checksums.prod}</div></div>
-        </div>
+  container.innerHTML = entries.map(e => `
+    <div class="entry">
+      <div class="meta">
+        <span class="id">#${e.entry_id}</span>
+        <span class="status verify-${e.entry_id}">verifying…</span>
       </div>
-    `;
-  }).join('');
+      <div><strong>Agent:</strong> ${e.agent_id}</div>
+      <p>${e.action_data}</p>
+      <div class="checksums">
+        <div class="checksum"><div class="lbl">SUM</div><div class="val">${e.checksums.sum}</div></div>
+        <div class="checksum"><div class="lbl">LINEAR</div><div class="val">${e.checksums.linear}</div></div>
+        <div class="checksum"><div class="lbl">PROD</div><div class="val">${e.checksums.prod}</div></div>
+      </div>
+    </div>
+  `).join('');
+
+  // Verify each entry's integrity via the contract's verify_entry view call.
+  entries.forEach(async (e) => {
+    try {
+      const intact = await nearCall('verify_entry', { entry_id: e.entry_id, action_data: e.action_data });
+      const badge = document.querySelector(`.verify-${e.entry_id}`);
+      if (intact === null) {
+        badge.textContent = 'NOT FOUND';
+        badge.className = 'status bad';
+      } else if (intact) {
+        badge.textContent = 'INTACT';
+        badge.className = 'status ok';
+      } else {
+        badge.textContent = 'TAMPERED';
+        badge.className = 'status bad';
+      }
+    } catch (err) {
+      const badge = document.querySelector(`.verify-${e.entry_id}`);
+      badge.textContent = 'VERIFY FAILED';
+      badge.className = 'status bad';
+      console.error(`verify_entry failed for entry ${e.entry_id}:`, err.message);
+    }
+  });
 }
 
 document.getElementById('sealBtn').onclick = async () => {

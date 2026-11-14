@@ -25,6 +25,7 @@ pub struct Entry {
     pub action_data: String,
     pub checksums: Checksums,
     pub timestamp: u64,
+    #[schemars(with = "String")]
     pub stored_by: AccountId, // who called store_entry (prevents agent_id spoofing claims)
 }
 

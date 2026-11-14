@@ -1,21 +1,21 @@
 # Sealed Log — 231-gate Tamper-Evident Storage on NEAR
 
 Built at NEAR HACKATHON 2026. Tracks: **open** (primary), **privacy** (secondary).
-Repo: public. Testnet demo: `sealed-log-2026.testnet`.
+Repo: public. Testnet demo: `redsigma.testnet`.
 
 ## The problem
 
-AI agents act on users' behalf — they spend, bid, infer, vote. Every action needs a tamper-evident log so anyone can verify nothing was altered after the fact. Existing solutions (Merkle logs, plain append-only DBs) don't give cryptographic per-entry tamper detection with public re-verification.
+AI agents act on users' behalf — they spend, bid, infer, vote. Every action needs a tamper-evident log so anyone can verify nothing was altered after the fact. Existing solutions (Merkle logs, plain append-only DBs) don't give deterministic per-entry checksum verification with public re-verification.
 
 ## What we built
 
-A NEAR smart contract (`sealed-log-2026.testnet`) that stores **231-gate sealed entries**:
+A NEAR smart contract (`redsigma.testnet`) that stores **231-gate sealed entries**:
 
 - **SUM** = Σ gᵢ mod 231
 - **LINEAR** = (g₁×22 + g₂) mod 231
 - **PROD** = Π gᵢ mod 231
 
-where g₁…g₅ are derived from the action data. Any single-character change breaks ≥3 of 6 verification layers. Tampering is publicly detectable by re-computing checksums.
+where g₁…g₅ are derived from the action data. Many ordinary edits change the checksums; modular collisions are possible. Tampering is publicly detectable by re-computing checksums.
 
 ## How to try it (do X → see Y)
 
@@ -72,9 +72,9 @@ near view <your-contract.testnet> get_entries_paginated '{"from":1,"limit":10}'
 
 See: up to 10 entries starting from ID 1, with `next_from` cursor for the next page. Limit capped at 100 to prevent gas DoS.
 
-### 7. Frontend demo
+### 7. Frontend demo (read-only, no wallet)
 
-Open `frontend/index.html`. Connect a testnet wallet. Seal entries, verify them (including not-found handling), watch the paginated ledger update live.
+Open `frontend/index.html` from a local HTTP server (for example, `python -m http.server 8000` from the repository root, then visit `http://localhost:8000/frontend/`). Click **Fetch live status**, **Retrieve & verify locally**, then **Test modified data**. This reads `redsigma.testnet` through public testnet RPC and compares the recorded checksums in the browser; no wallet is required. The interface does not submit new entries.
 
 ## Verification (independent)
 
@@ -107,7 +107,7 @@ See: `ALL 231-GATE CHECKS PASSED` — deterministic checksums, tamper detected o
 
 | Criterion | Our approach |
 |---|---|
-| Cryptographic tamper-evidence | 231-gate per entry — beats plain Merkle for small-entry auditability |
+| Deterministic tamper detection | 231-gate per entry — beats plain Merkle for small-entry auditability |
 | Public re-verification | Anyone can re-compute checksums off-chain; no trust in us |
 | NEAR native | Sub-account keyed entries, testnet-ready, mainnet-eligible |
 | Track fit | open (inheritance + Chain Signatures + sealed release rules), privacy (TEE attestation + sealed receipts) |
@@ -118,7 +118,7 @@ See: `ALL 231-GATE CHECKS PASSED` — deterministic checksums, tamper detected o
 - **Hivebuy** (swarms/agents): group buying with sealed bids. We don't collide — we're the tamper-evidence layer *under* agent markets.
 - **Heterotopia** (agent escrow/limits): startup world with restricted agent keys. We don't collide — we're the audit log *for* agent spending.
 
-Neither competitor has cryptographic per-entry tamper detection. That's our moat.
+Neither competitor has deterministic per-entry checksum verification. That's our moat.
 
 ## Tracks
 
@@ -128,4 +128,21 @@ Secondary: `privacy` — private expense auditor; each TEE-attested inference + 
 
 ## Contract address
 
-Testnet: `sealed-log-2026.testnet` (deployed live).
+Testnet: [`redsigma.testnet`](https://testnet.nearblocks.io/address/redsigma.testnet) (deployed live). Entry #1 is publicly readable, stored by `redsigma.testnet` for `thesis-engine`, with recorded SUM=11, LINEAR=141, PROD=168.
+
+### Current demo status
+
+- Read-only `get_owner`, `entry_count`, and `get_entry(1)` were observed working on testnet.
+- A full-payload `verify_entry(1, action_data)` request via the explorer returned `Request too large`. The browser demo instead recomputes the exact contract checksum formula locally from the retrieved data and reports PASS/FAIL. This local result is not an on-chain `verify_entry` execution.
+- Existing entry #1 contains demo-mode thesis data, not live analytics.
+- The checksums are **not collision resistant** and do not provide cryptographic authentication. They detect many edits, but deliberately constructed collisions are possible.
+- The contract supports storage and retrieval. Inheritance workflows, Chain Signatures, guardian voting, and TEE attestation are proposed integrations, **not implemented features**.
+
+### Windows CMD read-only commands
+
+```cmd
+near contract call-function as-read-only redsigma.testnet get_owner json-args "{}" network-config testnet now
+near contract call-function as-read-only redsigma.testnet entry_count json-args "{}" network-config testnet now
+near contract call-function as-read-only redsigma.testnet get_entry json-args "{\"entry_id\":1}" network-config testnet now
+```
+

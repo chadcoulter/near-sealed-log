@@ -11,19 +11,27 @@ body{font:16px system-ui;background:#0b1019;color:#e7eef8;max-width:900px;margin
 <section><h2>3 · Tamper test</h2><p>Uses the exact entry retrieved above. Adds one character without modifying the blockchain.</p><button id="tamper" disabled>Test modified data</button><pre id="tamperResult">Retrieve an entry first</pre></section>
 <section><h2>Verification method</h2><p>Five byte-folded gates produce SUM, LINEAR and PROD checksums modulo 231. These checksums are deterministic, <strong>not cryptographic collision-resistant hashes</strong>. A matching checksum is an integrity check, not proof of provenance or authenticity.</p><small>All reads use NEAR JSON-RPC query/call_function. The browser must permit requests to the configured public RPC endpoint.</small></section>
 <script>
-const ACCOUNT='sealed-log-2026.testnet',RPC='https://rpc.testnet.near.org';
+const ACCOUNT='sealed-log-2026.testnet';
+const RPC_ENDPOINTS=['https://rpc.testnet.fastnear.com','https://near-testnet.drpc.org','https://rpc.testnet.near.org'];
 let current=null;
 const el=id=>document.getElementById(id);
 const output=(id,x,ok)=>{el(id).textContent=typeof x==='string'?x:JSON.stringify(x,null,2);el(id).className=ok===undefined?'':ok?'ok':'bad'};
 async function view(method,args={}){
  const bytes=new TextEncoder().encode(JSON.stringify(args));
  let binary='';for(const b of bytes)binary+=String.fromCharCode(b);
- const response=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:'sealed-log-demo',method:'query',params:{request_type:'call_function',finality:'final',account_id:ACCOUNT,method_name:method,args_base64:btoa(binary)}})});
- if(!response.ok)throw Error('RPC HTTP '+response.status);
- const payload=await response.json();
- if(payload.error)throw Error(JSON.stringify(payload.error));
- const data=new Uint8Array(payload.result.result);
- return JSON.parse(new TextDecoder().decode(data));
+ const body=JSON.stringify({jsonrpc:'2.0',id:'sealed-log-demo',method:'query',params:{request_type:'call_function',finality:'final',account_id:ACCOUNT,method_name:method,args_base64:btoa(binary)}});
+ const errors=[];
+ for(const url of RPC_ENDPOINTS){
+  try{
+   const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body,signal:AbortSignal.timeout(12000)});
+   if(!response.ok)throw Error('HTTP '+response.status);
+   const payload=await response.json();
+   if(payload.error)throw Error(JSON.stringify(payload.error));
+   const data=new Uint8Array(payload.result.result);
+   return JSON.parse(new TextDecoder().decode(data));
+  }catch(e){errors.push(url+': '+e.message)}
+ }
+ throw Error('All testnet RPC endpoints failed. '+errors.join(' | '));
 }
 function checksums(s){
  const g=[0,0,0,0,0];new TextEncoder().encode(s).forEach((b,i)=>{const slot=i%5;g[slot]=(g[slot]+b)%(slot<2?22:231)});

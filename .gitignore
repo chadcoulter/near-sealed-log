@@ -1,0 +1,4 @@
+/contract/target/
+/contract/Cargo.lock
+**/target/
+**/Cargo.lock

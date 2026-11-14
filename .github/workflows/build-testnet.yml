@@ -1,0 +1,28 @@
+name: Build NEAR testnet contract
+on:
+  push:
+    branches: [hackathon-redsigma-testnet]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contract
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Unit tests
+        run: cargo test
+      - name: Build WASM
+        run: cargo build --target wasm32-unknown-unknown --release
+      - name: Upload contract WASM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sealed-log-testnet-wasm
+          path: contract/target/wasm32-unknown-unknown/release/*.wasm
+          if-no-files-found: error

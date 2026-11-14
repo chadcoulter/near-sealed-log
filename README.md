@@ -86,6 +86,16 @@ python3 scripts/verify.py
 
 See: `ALL 231-GATE CHECKS PASSED` — deterministic checksums, tamper detected on single-char change, gates in valid ranges, multibyte UTF-8 handled correctly.
 
+## Verify the live ledger (independent, no near-cli)
+
+Re-read the on-chain ledger over RPC and re-compute every checksum off-chain:
+
+```
+python3 scripts/verify_ledger.py
+```
+
+See: one `[PASS]` line per entry (stored checksums == independently computed), plus a live `verify_entry` intact/tampered pair, and `LEDGER VERIFICATION PASSED`. Exit code is non-zero on any mismatch.
+
 ## Debug log — edge cases found and fixed
 
 | # | Edge case | Fix |
@@ -96,10 +106,11 @@ See: `ALL 231-GATE CHECKS PASSED` — deterministic checksums, tamper detected o
 | 4 | No audit trail for who actually called `store_entry` | `stored_by` captures `env::predecessor_account_id()` |
 | 5 | `verify_entry` listed as change method in frontend (caused transaction timeout) | Moved to view methods; frontend routes correctly |
 | 6 | Multibyte UTF-8 (emoji, accented chars) | Every byte contributes to gates — verified correct in Python + Rust |
+| 7 | Deployed entries trapped (`WasmTrap(Unreachable)`) after the `Entry` schema changed from `tampered: bool` to `stored_by: AccountId` | Added `migrate_v1_entries()` — owner-only, reads raw stored bytes as the legacy schema and rewrites them in the current one; all 9 pre-upgrade entries now read and verify |
 
 ## Known limitations
 
-- **Contract upgrade breaks old entries**: Changing the `Entry` struct schema (e.g., field order or types) makes previously stored entries unreadable due to Borsh deserialization mismatch. For production, keep the schema stable across upgrades or deploy fresh.
+- **Contract upgrade breaks old entries**: Changing the `Entry` struct schema (e.g., field order or types) makes previously stored entries unreadable due to Borsh deserialization mismatch. This already happened once (`tampered: bool` → `stored_by: AccountId`); `migrate_v1_entries()` repairs it by reading the legacy bytes directly. For production, keep the schema stable across upgrades or migrate explicitly.
 - **No access control on `store_entry`**: Any caller can store an entry with any `agent_id`. `stored_by` enables after-the-fact auditing but doesn't prevent spoofing. For inheritance-account use cases, wrap `store_entry` with an `only_owner` check or restrict to authorized callers.
 - **Long `action_data` costs linear gas**: Bounded by NEAR's per-call gas limit, so it can't exhaust the chain, but very large entries cost more.
 

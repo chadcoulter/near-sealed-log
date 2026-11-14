@@ -10,7 +10,11 @@ crate-type = ["cdylib", "rlib"]
 near-sdk = { version = "5.30.2", features = ["legacy"] }
 borsh = "1"
 serde = { version = "1", features = ["derive"] }
-schemars = "0.8"
+
+[dev-dependencies]
+# near-sdk refuses to compile for a host target unless a valid cfg is set;
+# `unit-testing` is the supported one and enables the pure-Rust VM fallbacks.
+near-sdk = { version = "5.30.2", features = ["legacy", "unit-testing"] }
 
 [profile.release]
 opt-level = 3

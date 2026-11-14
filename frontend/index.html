@@ -113,6 +113,12 @@ function showResult(el, ok, title, lines) {
   el.innerHTML = '<h3>' + title + '</h3>' + lines.map(l => '<div>' + l + '</div>').join('');
 }
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
 function renderEntries(entries) {
   const container = document.getElementById('entries');
   if (!entries || entries.length === 0) {
@@ -125,8 +131,9 @@ function renderEntries(entries) {
         <span class="id">#${e.entry_id}</span>
         <span class="status verify-${e.entry_id}">verifying…</span>
       </div>
-      <div><strong>Agent:</strong> ${e.agent_id}</div>
-      <p>${e.action_data}</p>
+      <div><strong>Agent:</strong> ${esc(e.agent_id)}</div>
+      <div><strong>Stored by:</strong> ${esc(e.stored_by)}</div>
+      <p>${esc(e.action_data)}</p>
       <div class="checksums">
         <div class="checksum"><div class="lbl">SUM</div><div class="val">${e.checksums.sum}</div></div>
         <div class="checksum"><div class="lbl">LINEAR</div><div class="val">${e.checksums.linear}</div></div>
@@ -167,13 +174,13 @@ document.getElementById('sealBtn').onclick = async () => {
     const entryId = await nearCall('store_entry', { agent_id: agent, action_data: action });
     showResult(res, true, 'Entry sealed', [
       'Entry ID: <strong>' + entryId + '</strong>',
-      'Agent: ' + agent,
+      'Agent: ' + esc(agent),
       'Checksums stored on-chain. Any later change to this data will be detected by verify.'
     ]);
     document.getElementById('action').value = '';
     loadEntries();
   } catch (err) {
-    showResult(res, false, 'Seal failed', [err.message]);
+    showResult(res, false, 'Seal failed', [esc(err.message)]);
   }
 };
 
@@ -195,7 +202,7 @@ document.getElementById('verifyBtn').onclick = async () => {
         : 'Checksum mismatch — the action data has been modified since sealing.'
     ]);
   } catch (err) {
-    showResult(res, false, 'Verify failed', [err.message]);
+    showResult(res, false, 'Verify failed', [esc(err.message)]);
   }
 };
 
@@ -207,7 +214,7 @@ async function loadEntries() {
     renderEntries(page.entries);
     nextFrom = page.next_from ?? nextFrom;
   } catch (err) {
-    document.getElementById('entries').innerHTML = '<p style="color:#ef4444">Failed to load: ' + err.message + '</p>';
+    document.getElementById('entries').innerHTML = '<p style="color:#ef4444">Failed to load: ' + esc(err.message) + '</p>';
   }
 }
 

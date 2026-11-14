@@ -7,7 +7,7 @@ body{font:16px system-ui;background:#0b1019;color:#e7eef8;max-width:900px;margin
 <h1>REDΣ Sealed Log</h1><p>Live, read-only NEAR Testnet demonstration. No wallet or transaction required.</p>
 <p><a href="https://testnet.nearblocks.io/address/sealed-log-2026.testnet" target="_blank" rel="noopener">View sealed-log-2026.testnet on NearBlocks</a></p>
 <section><h2>1 · On-chain contract</h2><button id="connect">Fetch live status</button><pre id="status">Waiting for request</pre></section>
-<section><h2>2 · Retrieve an entry</h2><label>Entry ID <input id="entryId" type="number" min="1" value="1"></label><button id="fetch">Retrieve & verify locally</button><pre id="entry">Waiting for request</pre></section>
+<section><h2>2 · Retrieve an entry</h2><label>Entry ID <input id="entryId" type="number" min="1" value="5"></label><button id="fetch">Retrieve & verify locally</button><pre id="entry">Waiting for request</pre></section>
 <section><h2>3 · Tamper test</h2><p>Uses the exact entry retrieved above. Adds one character without modifying the blockchain.</p><button id="tamper" disabled>Test modified data</button><pre id="tamperResult">Retrieve an entry first</pre></section>
 <section><h2>Verification method</h2><p>Five byte-folded gates produce SUM, LINEAR and PROD checksums modulo 231. These checksums are deterministic, <strong>not cryptographic collision-resistant hashes</strong>. A matching checksum is an integrity check, not proof of provenance or authenticity.</p><small>All reads use NEAR JSON-RPC query/call_function. The browser must permit requests to the configured public RPC endpoint.</small></section>
 <script>

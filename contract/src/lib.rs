@@ -8,7 +8,7 @@ const MOD: u64 = 231;
 const LINEAR_MULT: u64 = 22;
 const MAX_PAGE_SIZE: u64 = 100;
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Checksums {
     pub sum: u64,    // SUM channel: sum(g_i) mod 231
